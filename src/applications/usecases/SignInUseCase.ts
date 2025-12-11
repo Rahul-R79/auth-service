@@ -1,4 +1,5 @@
 import { UserRepository } from "../../domain/repositories/UserRepository";
+import { RefreshTokenRepository } from "../../domain/repositories/RefreshTokenRepository";
 import { PasswordHashRepository } from "../../domain/repositories/PasswordHashRepository";
 import { TokenServiceRepository } from "../../domain/repositories/TokenServiceRepository";
 import { InvalidCredentialsError } from "../../domain/errors";
@@ -26,7 +27,8 @@ export class SignInUseCase {
     constructor(
         private userRepository: UserRepository,
         private passwordHashRepository: PasswordHashRepository,
-        private tokenService: TokenServiceRepository
+        private tokenService: TokenServiceRepository,
+        private refreshTokenRepository: RefreshTokenRepository
     ) {}
 
     async execute(data: SignInRequest): Promise<SignInResponse> {
@@ -51,6 +53,14 @@ export class SignInUseCase {
             userId: user.id,
             email: user.email,
         });
+
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+        await this.refreshTokenRepository.save(
+            refreshToken,
+            user.id,
+            expiresAt
+        );
 
         return {
             user: {

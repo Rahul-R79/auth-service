@@ -9,7 +9,9 @@ export function validate<T>(schema: z.ZodSchema<T>, data: unknown): T {
             const fields: Record<string, string> = {};
             error.issues.forEach((err) => {
                 const path = err.path.join(".");
-                fields[path] = err.message;
+                if (!fields[path]) {
+                    fields[path] = err.message;
+                }
             });
 
             throw new ValidationError("Validation failed", fields);

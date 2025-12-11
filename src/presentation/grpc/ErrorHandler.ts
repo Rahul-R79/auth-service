@@ -8,13 +8,12 @@ export function handleError(error: unknown): ConnectError {
     }
 
     if (error instanceof ApplicationError) {
-        return new ConnectError(
-            error.message,
-            error.code,
-            undefined,
-            undefined,
-            error
-        );
+        const metadata = new Headers();
+        if ("fields" in error && error.fields) {
+            metadata.set("fields", JSON.stringify(error.fields));
+        }
+
+        return new ConnectError(error.message, error.code, metadata);
     }
 
     if (error instanceof Error) {

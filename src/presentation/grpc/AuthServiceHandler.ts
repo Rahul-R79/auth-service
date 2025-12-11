@@ -5,12 +5,15 @@ import {
     AuthResponse,
     RefreshTokenRequest,
     ValidateTokenResponse,
+    LogoutRequest,
+    LogoutResponse,
 } from "../../../proto/auth/auth_pb";
 import { UserInfo } from "../../../proto/common/types_pb";
 import { SignUpUseCase } from "../../applications/usecases/SignUpUseCase";
 import { SignInUseCase } from "../../applications/usecases/SignInUseCase";
 import { ValidateTokenUseCase } from "../../applications/usecases/ValidateTokenUseCase";
 import { RefreshTokenUseCase } from "../../applications/usecases/RefreshTokenUseCase";
+import { LogoutUseCase } from "../../applications/usecases/UserLogoutUseCase";
 import { withErrorHandler } from "./ErrorHandler";
 
 export class AuthServiceHandler {
@@ -18,7 +21,8 @@ export class AuthServiceHandler {
         private signUpUseCase: SignUpUseCase,
         private signInUseCase: SignInUseCase,
         private validateTokenUseCase: ValidateTokenUseCase,
-        private refreshTokenUseCase: RefreshTokenUseCase
+        private refreshTokenUseCase: RefreshTokenUseCase,
+        private logoutUseCase: LogoutUseCase
     ) {}
 
     signUp = withErrorHandler(
@@ -96,6 +100,15 @@ export class AuthServiceHandler {
             });
         }
     );
+
+    logout = withErrorHandler(
+        async (req: LogoutRequest): Promise<LogoutResponse> => {
+            await this.logoutUseCase.execute({
+                refreshToken: req.refreshToken,
+            });
+            return new LogoutResponse({ success: true });
+        }
+    );
 }
 
 export const authServiceHandler = {
@@ -105,6 +118,7 @@ export const authServiceHandler = {
         authServiceHandlerImpl.validateToken(req),
     refreshToken: async (req: RefreshTokenRequest) =>
         authServiceHandlerImpl.refreshToken(req),
+    logout: async (req: LogoutRequest) => authServiceHandlerImpl.logout(req),
 };
 
 let authServiceHandlerImpl: AuthServiceHandler;

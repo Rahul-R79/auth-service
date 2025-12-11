@@ -7,6 +7,7 @@ import { logger } from "./infrastructure/config/logger";
 
 // Infrastructure
 import { PrismaUserRepository } from "./infrastructure/repositories/PrismaUserRepository";
+import { PrismaRefreshTokenRepository } from "./infrastructure/repositories/PrismaRefreshTokenRepository";
 import { BcryptPasswordService } from "./infrastructure/services/BcryptPasswordService";
 import { JwtTokenService } from "./infrastructure/services/JwtTokenService";
 
@@ -15,6 +16,7 @@ import { SignUpUseCase } from "./applications/usecases/SignUpUseCase";
 import { SignInUseCase } from "./applications/usecases/SignInUseCase";
 import { ValidateTokenUseCase } from "./applications/usecases/ValidateTokenUseCase";
 import { RefreshTokenUseCase } from "./applications/usecases/RefreshTokenUseCase";
+import { LogoutUseCase } from "./applications/usecases/UserLogoutUseCase";
 
 // Presentation
 import {
@@ -26,6 +28,7 @@ import {
 async function main() {
     connectToDatabase();
     const userRepo = new PrismaUserRepository(prisma);
+    const refreshTokenRepo = new PrismaRefreshTokenRepository(prisma);
     const passwordService = new BcryptPasswordService();
     const tokenService = new JwtTokenService(
         process.env.JWT_ACCESS_SECRET!,
@@ -41,17 +44,25 @@ async function main() {
     const signInUseCase = new SignInUseCase(
         userRepo,
         passwordService,
-        tokenService
+        tokenService,
+        refreshTokenRepo
     );
     const validateTokenUseCase = new ValidateTokenUseCase(tokenService);
 
-    const refreshTokenUseCase = new RefreshTokenUseCase(userRepo, tokenService);
+    const refreshTokenUseCase = new RefreshTokenUseCase(
+        userRepo,
+        tokenService,
+        refreshTokenRepo
+    );
+
+    const logoutUseCase = new LogoutUseCase(refreshTokenRepo);
 
     const authHandler = new AuthServiceHandler(
         signUpUseCase,
         signInUseCase,
         validateTokenUseCase,
-        refreshTokenUseCase
+        refreshTokenUseCase,
+        logoutUseCase
     );
 
     setAuthHandler(authHandler);

@@ -1,5 +1,6 @@
 import { UserRepository } from "../../domain/repositories/UserRepository";
 import { TokenServiceRepository } from "../../domain/repositories/TokenServiceRepository";
+import { RefreshTokenRepository } from "../../domain/repositories/RefreshTokenRepository";
 import { TokenExpiredError, InvalidTokenPayloadError, UserNotFoundError } from "../../domain/errors";
 import { refreshTokenSchema } from "../../domain/validation";
 import { validate } from "../../domain/validation";
@@ -16,7 +17,8 @@ interface RefreshTokenResponse {
 export class RefreshTokenUseCase {
     constructor(
         private userRepository: UserRepository,
-        private tokenService: TokenServiceRepository
+        private tokenService: TokenServiceRepository,
+        private refreshTokenRepository: RefreshTokenRepository
     ) {}
 
     async execute(data: RefreshTokenRequest): Promise<RefreshTokenResponse> {
@@ -27,6 +29,11 @@ export class RefreshTokenUseCase {
         try {
             decoded = this.tokenService.verifyRefreshToken(refreshToken);
         } catch (err) {
+            throw new TokenExpiredError("refresh");
+        }
+
+        const storedToken = await this.refreshTokenRepository.find(refreshToken);
+        if (!storedToken) {
             throw new TokenExpiredError("refresh");
         }
 
@@ -45,10 +52,20 @@ export class RefreshTokenUseCase {
             throw new UserNotFoundError(userId);
         }
 
+        await this.refreshTokenRepository.delete(refreshToken);
+
         const tokens = this.tokenService.generateTokens({
             userId: user.id,
             email: user.email,
         });
+
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+        await this.refreshTokenRepository.save(
+            tokens.refreshToken,
+            user.id,
+            expiresAt
+        );
 
         return {
             accessToken: tokens.accessToken,
