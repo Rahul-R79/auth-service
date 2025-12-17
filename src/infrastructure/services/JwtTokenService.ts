@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { TokenServiceRepository } from "../../domain/repositories/TokenServiceRepository";
 
 export class JwtTokenService implements TokenServiceRepository {
@@ -21,6 +22,7 @@ export class JwtTokenService implements TokenServiceRepository {
         });
         const refreshToken = jwt.sign(payload, this.refreshSecret, {
             expiresIn: this.refreshExpiresIn,
+            jwtid: crypto.randomBytes(16).toString("hex"),
         });
         return { accessToken, refreshToken };
     }

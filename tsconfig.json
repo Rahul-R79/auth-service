@@ -1,21 +1,22 @@
 {
     "compilerOptions": {
-        "target": "es2022",
+        "target": "ES2022",
         "module": "commonjs",
-        "lib": ["esnext", "dom"],
-        "jsx": "react-jsx",
+        "lib": ["ES2022"],
         "outDir": "./dist",
-        "noEmit": false,
         "strict": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
         "moduleResolution": "node",
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "allowJs": true,
-        "allowSyntheticDefaultImports": true
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true
     },
     "include": ["src/**/*", "proto/**/*"],
     "exclude": ["node_modules", "dist", "prisma.config.ts"]
