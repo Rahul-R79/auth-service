@@ -1,6 +1,6 @@
 import { UserRepository } from "../../domain/repositories/UserRepository";
 import { User } from "../../domain/entities/User";
-import { PrismaClient } from "../generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 export class PrismaUserRepository implements UserRepository {
     constructor(private prisma: PrismaClient) {}
