@@ -11,6 +11,7 @@ src/infrastructure/generated/
 /generated/
 
 # /proto/ 
+# (removed from ignore for Render build compatibility)
 
 # Build output
 dist/
