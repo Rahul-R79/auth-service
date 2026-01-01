@@ -10,9 +10,6 @@ package-lock.json
 src/infrastructure/generated/
 /generated/
 
-# Proto Generated (from Buf)
-proto/
-
 # Build output
 dist/
 build/
