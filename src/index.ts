@@ -21,7 +21,7 @@ import { LogoutUseCase } from "./applications/usecases/UserLogoutUseCase";
 import { authServiceHandler } from "./presentation/grpc/AuthServiceHandler";
 
 async function main() {
-    connectToDatabase();
+    await connectToDatabase();
     const userRepo = new PrismaUserRepository(prisma);
     const refreshTokenRepo = new PrismaRefreshTokenRepository(prisma);
     const passwordService = new BcryptPasswordService();
