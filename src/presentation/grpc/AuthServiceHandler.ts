@@ -54,11 +54,13 @@ export const authServiceHandler = (
         signIn: withErrorHandler(
             async (req: SignInRequest): Promise<AuthResponse> => {
                 const { email, password } = req;
+                console.log(`[DEBUG] Received Sign-In Request for: ${email}`);
 
                 const result = await useCases.signIn.execute({
                     email,
                     password,
                 });
+                console.log(`[DEBUG] Sign-In use case executed successfully`);
 
                 return new AuthResponse({
                     user: new UserInfo({
