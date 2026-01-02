@@ -2,7 +2,6 @@ import "dotenv/config";
 import { prisma, connectToDatabase } from "./infrastructure/config/prisma";
 import { createServer } from "http";
 import { connectNodeAdapter } from "@connectrpc/connect-node";
-import { AuthService } from "../proto/auth/auth_connect";
 import { logger } from "./infrastructure/config/logger";
 
 // Infrastructure
@@ -19,11 +18,7 @@ import { RefreshTokenUseCase } from "./applications/usecases/RefreshTokenUseCase
 import { LogoutUseCase } from "./applications/usecases/UserLogoutUseCase";
 
 // Presentation
-import {
-    AuthServiceHandler,
-    setAuthHandler,
-    authServiceHandler,
-} from "./presentation/grpc/AuthServiceHandler";
+import { authServiceHandler } from "./presentation/grpc/AuthServiceHandler";
 
 async function main() {
     connectToDatabase();
@@ -57,23 +52,19 @@ async function main() {
 
     const logoutUseCase = new LogoutUseCase(refreshTokenRepo);
 
-    const authHandler = new AuthServiceHandler(
-        signUpUseCase,
-        signInUseCase,
-        validateTokenUseCase,
-        refreshTokenUseCase,
-        logoutUseCase
-    );
-
-    setAuthHandler(authHandler);
-
-    const PORT = process.env.PORT;
-
     const handler = connectNodeAdapter({
         routes: (router) => {
-            router.service(AuthService, authServiceHandler);
+            authServiceHandler(router, {
+                signUp: signUpUseCase,
+                signIn: signInUseCase,
+                validateToken: validateTokenUseCase,
+                refreshToken: refreshTokenUseCase,
+                logout: logoutUseCase,
+            });
         },
     });
+
+    const PORT = process.env.PORT || 5001;
 
     const server = createServer(handler);
 

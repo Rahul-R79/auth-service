@@ -1,3 +1,5 @@
+import { ConnectRouter } from "@connectrpc/connect";
+import { AuthService } from "../../../proto/auth/auth_connect";
 import {
     SignUpRequest,
     SignInRequest,
@@ -16,112 +18,100 @@ import { RefreshTokenUseCase } from "../../applications/usecases/RefreshTokenUse
 import { LogoutUseCase } from "../../applications/usecases/UserLogoutUseCase";
 import { withErrorHandler } from "./ErrorHandler";
 
-export class AuthServiceHandler {
-    constructor(
-        private signUpUseCase: SignUpUseCase,
-        private signInUseCase: SignInUseCase,
-        private validateTokenUseCase: ValidateTokenUseCase,
-        private refreshTokenUseCase: RefreshTokenUseCase,
-        private logoutUseCase: LogoutUseCase
-    ) {}
+export const authServiceHandler = (
+    router: ConnectRouter,
+    useCases: {
+        signUp: SignUpUseCase;
+        signIn: SignInUseCase;
+        validateToken: ValidateTokenUseCase;
+        refreshToken: RefreshTokenUseCase;
+        logout: LogoutUseCase;
+    }
+) => {
+    router.service(AuthService, {
+        signUp: withErrorHandler(
+            async (req: SignUpRequest): Promise<AuthResponse> => {
+                const { email, password, displayName } = req;
 
-    signUp = withErrorHandler(
-        async (req: SignUpRequest): Promise<AuthResponse> => {
-            const { email, password, displayName } = req;
+                const result = await useCases.signUp.execute({
+                    email,
+                    password,
+                    displayName,
+                });
 
-            const result = await this.signUpUseCase.execute({
-                email,
-                password,
-                displayName,
-            });
+                return new AuthResponse({
+                    user: new UserInfo({
+                        id: result.user.id,
+                        email: result.user.email,
+                        displayName: result.user.displayName,
+                    }),
+                    accessToken: result.tokens.accessToken,
+                    refreshToken: result.tokens.refreshToken,
+                });
+            }
+        ),
 
-            return new AuthResponse({
-                user: new UserInfo({
-                    id: result.user.id,
-                    email: result.user.email,
-                    displayName: result.user.displayName,
-                }),
-                accessToken: result.tokens.accessToken,
-                refreshToken: result.tokens.refreshToken,
-            });
-        }
-    );
+        signIn: withErrorHandler(
+            async (req: SignInRequest): Promise<AuthResponse> => {
+                const { email, password } = req;
 
-    signIn = withErrorHandler(
-        async (req: SignInRequest): Promise<AuthResponse> => {
-            const { email, password } = req;
+                const result = await useCases.signIn.execute({
+                    email,
+                    password,
+                });
 
-            const result = await this.signInUseCase.execute({
-                email,
-                password,
-            });
+                return new AuthResponse({
+                    user: new UserInfo({
+                        id: result.user.id,
+                        email: result.user.email,
+                        displayName: result.user.displayName,
+                    }),
+                    accessToken: result.tokens.accessToken,
+                    refreshToken: result.tokens.refreshToken,
+                });
+            }
+        ),
 
-            return new AuthResponse({
-                user: new UserInfo({
-                    id: result.user.id,
-                    email: result.user.email,
-                    displayName: result.user.displayName,
-                }),
-                accessToken: result.tokens.accessToken,
-                refreshToken: result.tokens.refreshToken,
-            });
-        }
-    );
+        validateToken: withErrorHandler(
+            async (req: ValidateTokenRequest): Promise<ValidateTokenResponse> => {
+                const { token } = req;
 
-    validateToken = withErrorHandler(
-        async (req: ValidateTokenRequest): Promise<ValidateTokenResponse> => {
-            const { token } = req;
+                const result = await useCases.validateToken.execute({ token });
 
-            const result = await this.validateTokenUseCase.execute({ token });
+                return new ValidateTokenResponse({
+                    valid: result.valid,
+                    userId: result.userId ?? "",
+                });
+            }
+        ),
 
-            return new ValidateTokenResponse({
-                valid: result.valid,
-                userId: result.userId ?? "",
-            });
-        }
-    );
+        refreshToken: withErrorHandler(
+            async (req: RefreshTokenRequest): Promise<AuthResponse> => {
+                const { refreshToken } = req;
 
-    refreshToken = withErrorHandler(
-        async (req: RefreshTokenRequest): Promise<AuthResponse> => {
-            const { refreshToken } = req;
+                const result = await useCases.refreshToken.execute({
+                    refreshToken,
+                });
 
-            const result = await this.refreshTokenUseCase.execute({
-                refreshToken,
-            });
+                return new AuthResponse({
+                    user: new UserInfo({
+                        id: "",
+                        email: "",
+                        displayName: "",
+                    }),
+                    accessToken: result.accessToken,
+                    refreshToken: result.refreshToken,
+                });
+            }
+        ),
 
-            return new AuthResponse({
-                user: new UserInfo({
-                    id: "",
-                    email: "",
-                    displayName: "",
-                }),
-                accessToken: result.accessToken,
-                refreshToken: result.refreshToken,
-            });
-        }
-    );
-
-    logout = withErrorHandler(
-        async (req: LogoutRequest): Promise<LogoutResponse> => {
-            await this.logoutUseCase.execute({
-                refreshToken: req.refreshToken,
-            });
-            return new LogoutResponse({ success: true });
-        }
-    );
-}
-
-export const authServiceHandler = {
-    signUp: async (req: SignUpRequest) => authServiceHandlerImpl.signUp(req),
-    signIn: async (req: SignInRequest) => authServiceHandlerImpl.signIn(req),
-    validateToken: async (req: ValidateTokenRequest) =>
-        authServiceHandlerImpl.validateToken(req),
-    refreshToken: async (req: RefreshTokenRequest) =>
-        authServiceHandlerImpl.refreshToken(req),
-    logout: async (req: LogoutRequest) => authServiceHandlerImpl.logout(req),
-};
-
-let authServiceHandlerImpl: AuthServiceHandler;
-export const setAuthHandler = (handler: AuthServiceHandler) => {
-    authServiceHandlerImpl = handler;
+        logout: withErrorHandler(
+            async (req: LogoutRequest): Promise<LogoutResponse> => {
+                await useCases.logout.execute({
+                    refreshToken: req.refreshToken,
+                });
+                return new LogoutResponse({ success: true });
+            }
+        ),
+    });
 };
