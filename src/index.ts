@@ -68,7 +68,7 @@ async function main() {
 
     const server = createServer(handler);
 
-    server.listen(Number(PORT), () => {
+    server.listen(Number(PORT), "0.0.0.0", () => {
         logger.info({ port: PORT }, "Server started");
     });
 
