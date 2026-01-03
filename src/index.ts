@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { prisma, connectToDatabase } from "./infrastructure/config/prisma";
-import { createServer } from "http";
 import { connectNodeAdapter } from "@connectrpc/connect-node";
 import { logger } from "./infrastructure/config/logger";
+import { startGrpcServer } from "./infrastructure/config/server";
 
 // Infrastructure
 import { PrismaUserRepository } from "./infrastructure/repositories/PrismaUserRepository";
@@ -64,26 +64,14 @@ async function main() {
         },
     });
 
-    const PORT = process.env.PORT || 5001;
+    const PORT = Number(process.env.PORT || 5001);
 
-    const server = createServer(handler);
-
-    server.listen(Number(PORT), "0.0.0.0", () => {
-        logger.info({ port: PORT }, "Server started");
-    });
-
-    process.on("SIGTERM", async () => {
-        logger.info("Shutting down...");
-        server.close();
-        await prisma.$disconnect();
-        process.exit(0);
-    });
-
-    process.on("SIGINT", async () => {
-        logger.info("Shutting down...");
-        server.close();
-        await prisma.$disconnect();
-        process.exit(0);
+    startGrpcServer(handler, {
+        port: PORT,
+        serviceName: "Auth Service",
+        onShutdown: async () => {
+            await prisma.$disconnect();
+        }
     });
 }
 
