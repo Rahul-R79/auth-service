@@ -91,3 +91,13 @@ main().catch((err) => {
     logger.fatal({ error: err }, "Startup failed");
     process.exit(1);
 });
+
+process.on("unhandledRejection", (err) => {
+    logger.fatal({ error: err }, "Unhandled Rejection");
+    process.exit(1);
+});
+
+process.on("uncaughtException", (err) => {
+    logger.fatal({ error: err }, "Uncaught Exception");
+    process.exit(1);
+});
