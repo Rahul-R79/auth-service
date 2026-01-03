@@ -28,6 +28,8 @@ RUN apk add --no-cache dumb-init
 
 # Set production environment
 ENV NODE_ENV=production
+# Optimize Node.js for memory constrained environments (Render Free Tier = 512MB)
+ENV NODE_OPTIONS="--max-old-space-size=460"
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
